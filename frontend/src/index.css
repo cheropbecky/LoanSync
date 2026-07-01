@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+@theme {
+  /* Surfaces */
+  --color-bg-deep: #0B1120;
+  --color-bg-panel: #141E30;
+  --color-bg-input: #0B1120;
+  --color-bg-raised: #1A2840;
+
+  /* Border */
+  --color-border: #1E3050;
+
+  /* Text */
+  --color-text-primary: #E2E8F0;
+  --color-text-muted: #64748B;
+
+  /* Brand / status accents */
+  --color-emerald: #10B981;
+  --color-emerald-dark: #059669;
+  --color-emerald-light: #6EE7B7;
+  --color-amber: #F59E0B;
+  --color-danger: #EF4444;
+  --color-sky: #38BDF8;
+  --color-purple: #7C3AED;
+  --color-purple-light: #A78BFA;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-card: 16px;
+
+  --shadow-glow: 0 4px 20px rgba(16,185,129,0.3);
+  --shadow-modal: 0 24px 64px rgba(0,0,0,0.45);
+}
+
+/* Move the font import below the Tailwind directives and theme block */
+
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #0B1120;
+  color: #E2E8F0;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0B1120;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E3050;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a4470;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
