@@ -7,7 +7,7 @@ import adminRoutes from "./routes/admin.js";
 import mpesaRoutes from "./routes/mpesa.js";
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = 3000;
 
 app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
 app.use(express.json());

@@ -93,7 +93,7 @@ export default function AuthPage() {
           ) : (
           <>
           {/* Tabs */}
-          <div className="flex bg-bg-input rounded-lg p-1 mb-6">
+          <div className="flex bg-bg-input rounded-lg p-1 mb-4">
             <button
               onClick={() => { setMode("signin"); setError(""); }}
               className={`flex-1 py-2 rounded-md text-xs font-bold uppercase tracking-wide transition-colors ${
@@ -111,6 +111,50 @@ export default function AuthPage() {
               Create Account
             </button>
           </div>
+
+          {mode === "signin" && (
+            <div className="mb-4 p-3 bg-bg-raised/60 border border-border rounded-lg text-xs">
+              <div className="text-text-muted font-medium mb-2">Quick Demo Access:</div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setForm({ ...form, email: "shop@loansync.app", password: "password123" });
+                    setSubmitting(true);
+                    try {
+                      await signIn({ email: "shop@loansync.app", password: "password123" });
+                      navigate("/dashboard");
+                    } catch (err) {
+                      setError(err.message || "Failed to sign in");
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="flex-1 py-1.5 px-2 bg-emerald/15 hover:bg-emerald/25 text-emerald border border-emerald/30 rounded font-semibold transition-colors text-[11px]"
+                >
+                  Shop Owner
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setForm({ ...form, email: "admin@loansync.app", password: "password123" });
+                    setSubmitting(true);
+                    try {
+                      await signIn({ email: "admin@loansync.app", password: "password123" });
+                      navigate("/admin");
+                    } catch (err) {
+                      setError(err.message || "Failed to sign in");
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  className="flex-1 py-1.5 px-2 bg-purple/15 hover:bg-purple/25 text-purple-light border border-purple/30 rounded font-semibold transition-colors text-[11px]"
+                >
+                  Admin Console
+                </button>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {mode === "signup" && (

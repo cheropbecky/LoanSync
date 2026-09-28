@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Mail, AlertCircle } from "lucide-react";
+import { Mail, AlertCircle, Smartphone } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
+import MpesaModal from "../components/MpesaModal";
 import { useAsync } from "../hooks/useAsync";
 import { fetchAdminAlerts } from "../lib/adminApi";
 import { formatKES } from "../lib/format";
@@ -9,10 +10,21 @@ import { formatKES } from "../lib/format";
 export default function AdminAlerts() {
   const [search, setSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { data, loading, error } = useAsync(fetchAdminAlerts);
+  const [selectedMpesaLoan, setSelectedMpesaLoan] = useState(null);
+  const { data, loading, error, run: reloadAlerts } = useAsync(fetchAdminAlerts);
 
   const alerts = data?.alerts || [];
   const summary = data?.summary || {};
+
+  const filteredAlerts = alerts.filter((a) => {
+    const q = search.toLowerCase();
+    return (
+      !q ||
+      a.borrowerName.toLowerCase().includes(q) ||
+      a.phone.includes(q) ||
+      a.shopName.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="flex min-h-screen bg-bg-deep">
@@ -29,9 +41,14 @@ export default function AdminAlerts() {
                 {alerts.length} Critical
               </span>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-br from-emerald to-emerald-dark text-white text-sm font-bold shadow-glow">
-              <Mail size={15} /> Send Bulk Reminders
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-xs px-2.5 py-1 rounded bg-emerald/10 border border-emerald/30 text-emerald font-semibold">
+                M-Pesa Sandbox: 174379
+              </span>
+              <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-br from-emerald to-emerald-dark text-white text-sm font-bold shadow-glow">
+                <Mail size={15} /> Send Reminders
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -61,14 +78,14 @@ export default function AdminAlerts() {
 
           {loading ? (
             <div className="py-16 text-center text-text-muted text-sm">Loading alerts…</div>
-          ) : alerts.length === 0 ? (
+          ) : filteredAlerts.length === 0 ? (
             <div className="py-16 text-center">
               <div className="text-4xl mb-3">✅</div>
-              <div className="font-bold text-text-primary">No overdue loans. All clear!</div>
+              <div className="font-bold text-text-primary">No overdue loans matching criteria.</div>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {alerts.map((a) => (
+              {filteredAlerts.map((a) => (
                 <div key={a.id} className="bg-bg-panel border border-danger/30 border-l-4 border-l-danger rounded-card px-6 py-4 flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-lg bg-bg-raised flex items-center justify-center">
@@ -85,8 +102,23 @@ export default function AdminAlerts() {
                       <div className="text-xs text-text-muted">{a.phone}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-extrabold text-danger">{formatKES(a.amount)}</div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="text-lg font-extrabold text-danger">{formatKES(a.amount)}</div>
+                    </div>
+                    <button
+                      onClick={() =>
+                        setSelectedMpesaLoan({
+                          id: a.id,
+                          borrower_name: a.borrowerName,
+                          phone: a.phone,
+                          amount: a.amount,
+                        })
+                      }
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald hover:bg-emerald-dark text-white font-bold text-xs shadow-glow transition-all"
+                    >
+                      <Smartphone size={14} /> Request M-Pesa
+                    </button>
                   </div>
                 </div>
               ))}
@@ -94,6 +126,15 @@ export default function AdminAlerts() {
           )}
         </main>
       </div>
+
+      <MpesaModal
+        open={Boolean(selectedMpesaLoan)}
+        onClose={() => setSelectedMpesaLoan(null)}
+        loan={selectedMpesaLoan}
+        onPaymentSuccess={() => {
+          reloadAlerts?.();
+        }}
+      />
     </div>
   );
 }

@@ -35,3 +35,5 @@ export function Select({ className = "", children, ...props }) {
 export function Textarea({ className = "", ...props }) {
   return <textarea className={`${baseInputClass} resize-none ${className}`} {...props} />;
 }
+
+export default Field;

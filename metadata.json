@@ -1,0 +1,6 @@
+{
+  "name": "LoanSync",
+  "description": "Loan tracking and management system with shop dashboards, admin oversight, and M-Pesa integration",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
