@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
-import { Plus, MoreVertical, Download, Filter, Smartphone, CheckCircle } from "lucide-react";
+import { Plus, MoreVertical, Download, Filter, Smartphone, CheckCircle, Banknote, ShieldCheck } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
 import StatusBadge from "../components/StatusBadge";
 import AddLoanModal from "../components/AddLoanModal";
 import MpesaModal from "../components/MpesaModal";
+import CashPaymentModal from "../components/CashPaymentModal";
 import Button from "../components/Button";
 import { useLoans } from "../hooks/useLoans";
 import { formatKES, formatDate, initialsFromName, effectiveStatus } from "../lib/format";
@@ -17,9 +18,11 @@ export default function ShopDashboard() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
+  const [cashModalOpen, setCashModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [selectedMpesaLoan, setSelectedMpesaLoan] = useState(null);
+  const [selectedCashLoan, setSelectedCashLoan] = useState(null);
 
   const decorated = useMemo(
     () => loans.map((l) => ({ ...l, _status: effectiveStatus(l) })),
@@ -53,14 +56,21 @@ export default function ShopDashboard() {
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-xl sm:text-2xl font-extrabold text-text-primary">My Loan Records</h1>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald/15 text-emerald border border-emerald/30 text-[11px] font-bold">
-                  M-Pesa Sandbox: 174379
+                  Cash & M-Pesa Repayments
                 </span>
               </div>
               <p className="text-text-muted text-sm">
-                Manage and track borrower balances with Safaricom Daraja STK Push repayment.
+                Manage borrower credit records, record cash transactions, and initiate M-Pesa STK push repayments.
               </p>
             </div>
-            <div className="flex gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                onClick={() => setCashModalOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-emerald/15 hover:bg-emerald text-emerald hover:text-white border border-emerald/30 text-xs font-bold transition-all shadow-sm"
+              >
+                <Banknote size={15} />
+                <span>Record Cash Payment</span>
+              </button>
               <Button onClick={() => setModalOpen(true)}>
                 <Plus size={16} /> Add Loan Record
               </Button>
@@ -111,26 +121,26 @@ export default function ShopDashboard() {
                 </div>
                 <div className="text-text-muted text-sm mt-1">
                   {decorated.length === 0
-                    ? 'Click "Add Loan Record" to get started.'
+                    ? 'Click "Add Loan Record" or "Record Cash Payment" to get started.'
                     : "Try a different search or filter."}
                 </div>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <div className="min-w-[840px]">
-                  <div className="grid grid-cols-[1.5fr_1.1fr_1fr_1.1fr_0.8fr_1fr_0.4fr] gap-3 px-6 py-3 text-[10px] font-bold uppercase tracking-wider text-text-muted border-b border-border">
+                <div className="min-w-[880px]">
+                  <div className="grid grid-cols-[1.5fr_1.1fr_1fr_1.1fr_0.8fr_1.3fr_0.4fr] gap-3 px-6 py-3.5 text-[10px] font-bold uppercase tracking-wider text-text-muted border-b border-border bg-bg-raised/20">
                     <span>Borrower</span>
                     <span>Phone Number</span>
                     <span>Amount</span>
                     <span>Issue / Due Date</span>
                     <span>Status</span>
-                    <span>M-Pesa Action</span>
+                    <span>Repayment Actions</span>
                     <span></span>
                   </div>
                   {filtered.map((loan) => (
                     <div
                       key={loan.id}
-                      className="grid grid-cols-[1.5fr_1.1fr_1fr_1.1fr_0.8fr_1fr_0.4fr] gap-3 px-6 py-4 items-center border-b border-border last:border-0 hover:bg-bg-raised/40 transition-colors"
+                      className="grid grid-cols-[1.5fr_1.1fr_1fr_1.1fr_0.8fr_1.3fr_0.4fr] gap-3 px-6 py-4 items-center border-b border-border last:border-0 hover:bg-bg-raised/40 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-bg-raised flex items-center justify-center text-xs font-bold text-text-primary shrink-0">
@@ -138,7 +148,7 @@ export default function ShopDashboard() {
                         </div>
                         <div>
                           <div className="font-bold text-text-primary text-sm">{loan.borrower_name}</div>
-                          {loan.note && <div className="text-xs text-text-muted">{loan.note}</div>}
+                          {loan.note && <div className="text-xs text-text-muted truncate max-w-[180px]">{loan.note}</div>}
                         </div>
                       </div>
                       <div className="text-sm text-text-muted">{loan.phone}</div>
@@ -154,15 +164,26 @@ export default function ShopDashboard() {
                       </div>
                       <div><StatusBadge status={loan._status} /></div>
 
-                      <div>
+                      <div className="flex items-center gap-1.5">
                         {loan._status !== "paid" ? (
-                          <button
-                            onClick={() => setSelectedMpesaLoan(loan)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald/15 hover:bg-emerald text-emerald hover:text-white border border-emerald/30 text-xs font-bold transition-all shadow-sm"
-                          >
-                            <Smartphone size={13} />
-                            <span>M-Pesa STK</span>
-                          </button>
+                          <>
+                            <button
+                              onClick={() => setSelectedCashLoan(loan)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald/15 hover:bg-emerald text-emerald hover:text-white border border-emerald/30 text-xs font-bold transition-all shadow-sm"
+                              title="Record Cash Payment"
+                            >
+                              <Banknote size={12} />
+                              <span>Cash</span>
+                            </button>
+                            <button
+                              onClick={() => setSelectedMpesaLoan(loan)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-sky/15 hover:bg-sky text-sky hover:text-white border border-sky/30 text-xs font-bold transition-all shadow-sm"
+                              title="Send M-Pesa STK Push"
+                            >
+                              <Smartphone size={12} />
+                              <span>M-Pesa</span>
+                            </button>
+                          </>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-xs text-emerald font-semibold">
                             <CheckCircle size={13} /> Settled
@@ -178,14 +199,25 @@ export default function ShopDashboard() {
                           <MoreVertical size={16} />
                         </button>
                         {menuOpenId === loan.id && (
-                          <div className="absolute right-0 top-8 z-10 bg-bg-raised border border-border rounded-lg shadow-modal py-1 w-44">
+                          <div className="absolute right-0 top-8 z-10 bg-bg-raised border border-border rounded-lg shadow-modal py-1 w-48">
+                            {loan._status !== "paid" && (
+                              <button
+                                onClick={() => {
+                                  setSelectedCashLoan(loan);
+                                  setMenuOpenId(null);
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs font-semibold text-emerald hover:bg-emerald/10 flex items-center gap-2"
+                              >
+                                <Banknote size={13} /> Record Cash Payment
+                              </button>
+                            )}
                             {loan._status !== "paid" && (
                               <button
                                 onClick={() => {
                                   setSelectedMpesaLoan(loan);
                                   setMenuOpenId(null);
                                 }}
-                                className="w-full text-left px-3 py-2 text-xs font-semibold text-emerald hover:bg-emerald/10 flex items-center gap-2"
+                                className="w-full text-left px-3 py-2 text-xs font-semibold text-sky hover:bg-sky/10 flex items-center gap-2"
                               >
                                 <Smartphone size={13} /> M-Pesa STK Push
                               </button>
@@ -195,7 +227,7 @@ export default function ShopDashboard() {
                                 onClick={() => { updateLoanStatus(loan.id, "paid"); setMenuOpenId(null); }}
                                 className="w-full text-left px-3 py-2 text-xs font-semibold text-text-primary hover:bg-bg-panel"
                               >
-                                ✓ Mark as Paid
+                                ✓ Quick Mark as Paid
                               </button>
                             )}
                             {loan._status === "active" && (
@@ -210,7 +242,7 @@ export default function ShopDashboard() {
                               onClick={() => { deleteLoan(loan.id); setMenuOpenId(null); }}
                               className="w-full text-left px-3 py-2 text-xs font-semibold text-text-muted hover:bg-bg-panel"
                             >
-                              Delete
+                              Delete Record
                             </button>
                           </div>
                         )}
@@ -224,14 +256,40 @@ export default function ShopDashboard() {
         </main>
       </div>
 
-      <AddLoanModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={addLoan} />
-      
+      {/* Add Loan Modal */}
+      <AddLoanModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={addLoan}
+        existingLoans={loans}
+      />
+
+      {/* Dedicated Cash Payment Modal */}
+      <CashPaymentModal
+        open={cashModalOpen || Boolean(selectedCashLoan)}
+        onClose={() => {
+          setCashModalOpen(false);
+          setSelectedCashLoan(null);
+        }}
+        loans={loans}
+        preselectedLoan={selectedCashLoan}
+        onSuccess={(updatedLoan) => {
+          if (updatedLoan?.id) {
+            updateLoanStatus(updatedLoan.id, updatedLoan.status);
+          }
+          setCashModalOpen(false);
+          setSelectedCashLoan(null);
+        }}
+      />
+
+      {/* M-Pesa STK Modal */}
       <MpesaModal
         open={Boolean(selectedMpesaLoan)}
         onClose={() => setSelectedMpesaLoan(null)}
         loan={selectedMpesaLoan}
         onPaymentSuccess={(loanId) => {
           updateLoanStatus(loanId, "paid");
+          setSelectedMpesaLoan(null);
         }}
       />
     </div>

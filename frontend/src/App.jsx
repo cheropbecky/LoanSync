@@ -9,6 +9,8 @@ import AdminShops from "./pages/AdminShops";
 import AdminShopDetail from "./pages/AdminShopDetail";
 import AdminAlerts from "./pages/AdminAlerts";
 import AdminReports from "./pages/AdminReports";
+import AdminCustomers from "./pages/AdminCustomers";
+import AdminCustomerDetail from "./pages/AdminCustomerDetail";
 
 export default function App() {
   return (
@@ -42,6 +44,22 @@ export default function App() {
             element={
               <RequireAdmin>
                 <AdminOverview />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/admin/customers"
+            element={
+              <RequireAdmin>
+                <AdminCustomers />
+              </RequireAdmin>
+            }
+          />
+          <Route
+            path="/admin/customers/:phone"
+            element={
+              <RequireAdmin>
+                <AdminCustomerDetail />
               </RequireAdmin>
             }
           />

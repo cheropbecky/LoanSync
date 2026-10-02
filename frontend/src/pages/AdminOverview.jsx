@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Download, Plus, ChevronRight, AlertTriangle } from "lucide-react";
+import { Download, Plus, ChevronRight, Users, ShieldCheck, ArrowRight } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 import StatCard from "../components/StatCard";
@@ -39,9 +39,12 @@ export default function AdminOverview() {
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-text-muted text-sm font-bold hover:text-text-primary transition-colors">
-                <Download size={15} /> Export Report
-              </button>
+              <Link
+                to="/admin/customers"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-purple/40 bg-purple/10 text-purple-light text-sm font-bold hover:bg-purple hover:text-white transition-all shadow-sm"
+              >
+                <Users size={15} /> Borrower Credibility
+              </Link>
               <button
                 onClick={() => setModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-br from-emerald to-emerald-dark text-white text-sm font-bold shadow-glow"
@@ -69,10 +72,36 @@ export default function AdminOverview() {
           {/* Tabs */}
           <div className="flex gap-6 border-b border-border mb-6">
             <Link to="/admin" className="pb-3 text-sm font-bold text-emerald border-b-2 border-emerald uppercase tracking-wide">Overview</Link>
+            <Link to="/admin/customers" className="pb-3 text-sm font-bold text-text-muted uppercase tracking-wide hover:text-text-primary flex items-center gap-1.5">
+              Borrowers & Credit
+              <span className="px-1.5 py-0.2 rounded text-[10px] bg-purple/20 text-purple-light font-extrabold">NEW</span>
+            </Link>
             <Link to="/admin/shops" className="pb-3 text-sm font-bold text-text-muted uppercase tracking-wide hover:text-text-primary">Shops</Link>
             <Link to="/admin/alerts" className="pb-3 text-sm font-bold text-text-muted uppercase tracking-wide hover:text-text-primary flex items-center gap-1.5">
               Alerts
               {overview.overdueCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-danger" />}
+            </Link>
+          </div>
+
+          {/* Customer Credibility Banner */}
+          <div className="p-4 mb-6 rounded-xl bg-gradient-to-r from-purple/15 via-bg-panel to-bg-panel border border-purple/30 flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple/20 text-purple-light flex items-center justify-center shrink-0">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <div className="font-bold text-sm text-text-primary">Borrower Credibility & Rating Dashboard</div>
+                <div className="text-xs text-text-muted">
+                  Cross-shop payment history tracking. Punctual borrowers qualify for expanded credit limits; defaults are restricted.
+                </div>
+              </div>
+            </div>
+            <Link
+              to="/admin/customers"
+              className="px-3.5 py-2 rounded-lg bg-purple text-white text-xs font-bold flex items-center gap-1.5 hover:bg-purple/90 transition-colors shadow-glow"
+            >
+              <span>View Borrower Ratings</span>
+              <ArrowRight size={14} />
             </Link>
           </div>
 

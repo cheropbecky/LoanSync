@@ -57,6 +57,21 @@ export async function fetchAdminAlerts() {
   return res.json();
 }
 
+// Customers & Credibility APIs (Admin)
+export async function fetchAdminCustomers() {
+  const headers = await authHeader();
+  const res = await fetch(`${API_BASE}/api/admin/customers`, { headers });
+  if (!res.ok) throw new Error("Failed to load customer credibility records");
+  return res.json();
+}
+
+export async function fetchCustomerDetail(phone) {
+  const headers = await authHeader();
+  const res = await fetch(`${API_BASE}/api/admin/customers/${encodeURIComponent(phone)}`, { headers });
+  if (!res.ok) throw new Error("Failed to load borrower payment profile");
+  return res.json();
+}
+
 // Safaricom Daraja M-Pesa APIs
 export async function fetchMpesaConfig() {
   const res = await fetch(`${API_BASE}/api/mpesa/config`);
@@ -96,5 +111,27 @@ export async function confirmMpesaPayment({ checkoutRequestId, loanId }) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || "Failed to confirm payment");
   }
+  return res.json();
+}
+
+// Cash Transaction APIs (Shop Owner)
+export async function recordCashPayment({ loanId, amount, paymentDate, receiptNo, notes }) {
+  const headers = await authHeader();
+  const res = await fetch(`${API_BASE}/api/payments/cash`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ loanId, amount, paymentDate, receiptNo, notes }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || "Failed to record cash payment");
+  }
+  return res.json();
+}
+
+export async function fetchShopPayments(shopId) {
+  const headers = await authHeader();
+  const res = await fetch(`${API_BASE}/api/payments/shop/${shopId}`, { headers });
+  if (!res.ok) throw new Error("Failed to load shop payments");
   return res.json();
 }

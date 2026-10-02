@@ -11,6 +11,7 @@ dotenv.config();
 
 import adminRoutes from "./backend/src/routes/admin.js";
 import mpesaRoutes from "./backend/src/routes/mpesa.js";
+import paymentsRoutes from "./backend/src/routes/payments.js";
 
 async function startServer() {
   const app = express();
@@ -24,6 +25,7 @@ async function startServer() {
   app.get("/health", (req, res) => res.json({ ok: true, service: "loansync-app" }));
   app.use("/api/admin", adminRoutes);
   app.use("/api/mpesa", mpesaRoutes);
+  app.use("/api/payments", paymentsRoutes);
 
   // Frontend serving
   const distDir = path.resolve(__dirname, "dist");

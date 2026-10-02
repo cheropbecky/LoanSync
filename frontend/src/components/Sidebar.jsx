@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import {
-  LayoutGrid, CreditCard, Store, BarChart2, ShieldCheck, HelpCircle, LogOut, X,
+  LayoutGrid, CreditCard, Store, BarChart2, ShieldCheck, HelpCircle, LogOut, X, Users, Banknote,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -11,6 +11,7 @@ const SHOP_LINKS = [
 
 const ADMIN_LINKS = [
   { to: "/admin", label: "Dashboard", icon: LayoutGrid },
+  { to: "/admin/customers", label: "Borrowers & Credit", icon: Users },
   { to: "/admin/shops", label: "Shops", icon: Store },
   { to: "/admin/alerts", label: "Alerts", icon: ShieldCheck },
   { to: "/admin/reports", label: "Reports", icon: BarChart2 },

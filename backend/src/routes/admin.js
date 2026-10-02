@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { supabaseAdmin } from "../lib/supabaseAdmin.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { computeCustomerCredibility } from "../lib/credibility.js";
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -178,6 +179,144 @@ router.get("/alerts", async (req, res) => {
   }
 });
 
+// GET /api/admin/customers — network-wide customer directory & credibility rankings
+router.get("/customers", async (req, res) => {
+  try {
+    const { data: shops } = await supabaseAdmin.from("shops").select("id, name, location");
+    const { data: loans } = await supabaseAdmin.from("loans").select("*");
+
+    const shopMap = new Map((shops || []).map((s) => [s.id, s]));
+    const customerMap = new Map();
+
+    (loans || []).forEach((loan) => {
+      const phone = (loan.phone || "").trim();
+      if (!phone) return;
+
+      const shop = shopMap.get(loan.shop_id) || { name: "Unknown Shop" };
+      const decoratedLoan = {
+        ...loan,
+        _status: effectiveStatus(loan),
+        shop_name: shop.name,
+      };
+
+      if (!customerMap.has(phone)) {
+        customerMap.set(phone, {
+          phone,
+          name: loan.borrower_name,
+          loans: [],
+          shops: new Set(),
+        });
+      }
+
+      const cust = customerMap.get(phone);
+      if (loan.borrower_name && loan.borrower_name.length > cust.name.length) {
+        cust.name = loan.borrower_name;
+      }
+      cust.loans.push(decoratedLoan);
+      cust.shops.add(shop.name);
+    });
+
+    const customers = Array.from(customerMap.values()).map((cust) => {
+      const credibility = computeCustomerCredibility(cust.loans);
+      return {
+        phone: cust.phone,
+        name: cust.name,
+        shopNames: Array.from(cust.shops),
+        shopsCount: cust.shops.size,
+        loansCount: cust.loans.length,
+        credibility,
+        totalBorrowed: credibility.totalBorrowed,
+        totalRepaid: credibility.totalRepaid,
+        totalOutstanding: credibility.totalOutstanding,
+        totalOverdue: credibility.totalOverdue,
+        overdueCount: credibility.overdueCount,
+        paidCount: credibility.paidCount,
+        activeCount: cust.loans.filter((l) => l._status === "active").length,
+        allowedCreditLimit: credibility.allowedCreditLimit,
+        rating: credibility.rating,
+        tier: credibility.tier,
+      };
+    });
+
+    // Sort by credibility score descending, then loans count
+    customers.sort((a, b) => b.credibility.score - a.credibility.score);
+
+    res.json(customers);
+  } catch (err) {
+    console.error("[Get Customers Error]", err);
+    res.status(500).json({ error: "Failed to load customers." });
+  }
+});
+
+// GET /api/admin/customers/:phone — single borrower detailed profile, loans & payment history
+router.get("/customers/:phone", async (req, res) => {
+  try {
+    const { phone } = req.params;
+    const { data: shops } = await supabaseAdmin.from("shops").select("id, name, location, phone");
+    const { data: loans } = await supabaseAdmin.from("loans").select("*");
+
+    const shopMap = new Map((shops || []).map((s) => [s.id, s]));
+
+    const borrowerLoans = (loans || [])
+      .filter((l) => (l.phone || "").trim() === phone.trim())
+      .map((loan) => {
+        const shop = shopMap.get(loan.shop_id) || { name: "Unknown Shop" };
+        return {
+          ...loan,
+          _status: effectiveStatus(loan),
+          shop_name: shop.name,
+        };
+      })
+      .sort((a, b) => new Date(b.created_at || b.issue_date) - new Date(a.created_at || a.issue_date));
+
+    if (borrowerLoans.length === 0) {
+      return res.status(404).json({ error: "Borrower not found." });
+    }
+
+    const borrowerName = borrowerLoans[0].borrower_name;
+    const credibility = computeCustomerCredibility(borrowerLoans);
+
+    // Fetch cash & mpesa payment transactions for this borrower
+    const loanIds = new Set(borrowerLoans.map((l) => l.id));
+
+    let cashPayments = [];
+    try {
+      const { data } = await supabaseAdmin.from("cash_transactions").select("*");
+      if (data) {
+        cashPayments = data.filter((c) => loanIds.has(c.loan_id) || (c.phone || "").trim() === phone.trim());
+      }
+    } catch {
+      cashPayments = [];
+    }
+
+    let mpesaPayments = [];
+    try {
+      const { data } = await supabaseAdmin.from("mpesa_transactions").select("*");
+      if (data) {
+        mpesaPayments = data.filter(
+          (m) => (loanIds.has(m.loan_id) || (m.phone || "").includes(phone.slice(-9))) && m.status === "completed"
+        );
+      }
+    } catch {
+      mpesaPayments = [];
+    }
+
+    res.json({
+      customer: {
+        phone,
+        name: borrowerName,
+        credibility,
+        loans: borrowerLoans,
+        cashPayments,
+        mpesaPayments,
+      },
+    });
+  } catch (err) {
+    console.error("[Get Customer Detail Error]", err);
+    res.status(500).json({ error: "Failed to load customer profile." });
+  }
+});
+
 // GET /api/admin/pending-shops — list shops registered by admin, not yet claimed
 router.get("/pending-shops", async (req, res) => {
   try {
@@ -193,10 +332,7 @@ router.get("/pending-shops", async (req, res) => {
   }
 });
 
-// POST /api/admin/pending-shops — admin pre-registers a shop's details.
-// Body: { name, phone, location, email }
-// The shop owner claims it automatically the moment they sign up with a
-// matching email or phone (see handle_new_user() trigger in Supabase).
+// POST /api/admin/pending-shops — admin pre-registers a shop's details
 router.post("/pending-shops", async (req, res) => {
   try {
     const { name, phone, location, email } = req.body;
