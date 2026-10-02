@@ -15,7 +15,7 @@ import paymentsRoutes from "./backend/src/routes/payments.js";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
   const HOST = "0.0.0.0";
 
   app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
