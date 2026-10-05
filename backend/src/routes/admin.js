@@ -189,8 +189,10 @@ router.get("/customers", async (req, res) => {
     const customerMap = new Map();
 
     (loans || []).forEach((loan) => {
-      const phone = (loan.phone || "").trim();
-      if (!phone) return;
+      const rawPhone = (loan.phone || "").trim();
+      if (!rawPhone) return;
+      const digits = rawPhone.replace(/[^0-9]/g, "");
+      const normalizedKey = digits.length >= 9 ? digits.slice(-9) : rawPhone;
 
       const shop = shopMap.get(loan.shop_id) || { name: "Unknown Shop" };
       const decoratedLoan = {
@@ -199,16 +201,16 @@ router.get("/customers", async (req, res) => {
         shop_name: shop.name,
       };
 
-      if (!customerMap.has(phone)) {
-        customerMap.set(phone, {
-          phone,
+      if (!customerMap.has(normalizedKey)) {
+        customerMap.set(normalizedKey, {
+          phone: rawPhone,
           name: loan.borrower_name,
           loans: [],
           shops: new Set(),
         });
       }
 
-      const cust = customerMap.get(phone);
+      const cust = customerMap.get(normalizedKey);
       if (loan.borrower_name && loan.borrower_name.length > cust.name.length) {
         cust.name = loan.borrower_name;
       }
@@ -257,8 +259,15 @@ router.get("/customers/:phone", async (req, res) => {
 
     const shopMap = new Map((shops || []).map((s) => [s.id, s]));
 
+    const cleanParam = phone.replace(/[^0-9]/g, "");
+    const paramKey = cleanParam.length >= 9 ? cleanParam.slice(-9) : phone.trim();
+
     const borrowerLoans = (loans || [])
-      .filter((l) => (l.phone || "").trim() === phone.trim())
+      .filter((l) => {
+        const lp = (l.phone || "").replace(/[^0-9]/g, "");
+        const loanKey = lp.length >= 9 ? lp.slice(-9) : (l.phone || "").trim();
+        return loanKey === paramKey || (l.phone || "").trim() === phone.trim();
+      })
       .map((loan) => {
         const shop = shopMap.get(loan.shop_id) || { name: "Unknown Shop" };
         return {
